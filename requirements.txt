@@ -1,0 +1,11 @@
+hpsklearn==0.1.0
+hpsklearn.egg==info
+hyperopt==0.2.7
+matplotlib==3.4.2
+numpy==1.22.4
+pandas==1.4.1
+pandas_profiling==3.6.6
+scikit_learn==1.2.2
+SQLAlchemy==1.4.39
+tqdm==4.63.1
+ydata_profiling==4.1.1
