@@ -2,25 +2,17 @@
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.neural_network import MLPClassifier
-from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.preprocessing import RobustScaler  # robust to outliers
-from sklearn.preprocessing import Normalizer
-from sklearn.preprocessing import QuantileTransformer  # transform features to follow a uniform or a normal distribution
-from sklearn.preprocessing import PowerTransformer  # transform data to follow a gaussian distribution
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
-
-from hpsklearn import HyperoptEstimator, k_neighbors_classifier
 from sklearn.neighbors import KNeighborsClassifier
-from hyperopt import tpe, hp, STATUS_OK
+from hyperopt import STATUS_OK
 import numpy as np
 
 
 def getBestModelfromTrials(trials):
     valid_trial_list = [trial for trial in trials
                             if STATUS_OK == trial['result']['status']]
-    losses = [ float(trial['result']['loss']) for trial in valid_trial_list]
+    losses = [float(trial['result']['loss']) for trial in valid_trial_list]
     index_having_minumum_loss = np.argmin(losses)
     best_trial_obj = valid_trial_list[index_having_minumum_loss]
     return best_trial_obj['result']['Trained_Model']

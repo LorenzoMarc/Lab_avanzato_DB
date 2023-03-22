@@ -51,9 +51,11 @@ def save(model):
     date = datetime.now()
     ts = date.timestamp()
     ts = str(ts).split('.')[0]
-    name_model_f = 'model_'+str(ts)+'.pkl'
-    with open(name_model_f, 'wb') as f:
+    name_model_f = 'model_'+str(ts)
+    with open(name_model_f+'.pkl', 'wb') as f:
         pickle.dump(model, f)
+    f.close()
+    return name_model_f
 
 
 # load function load the model

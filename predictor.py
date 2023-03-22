@@ -40,13 +40,13 @@ def main_train_multilabel(df_path, algo):
     best = fmin(mc.clf, params, algo=tpe.suggest, max_evals=100, trials=trials)
     ud.plot_results(trials)
     model = mc.getBestModelfromTrials(trials)
-    ud.save(model)
+    name_model = ud.save(model)
     # test model
     pred, score = mc.test(model, test[['coord_x', 'coord_y']], test_label)
     pred_df = pd.DataFrame(pred, columns=['building', 'floor', 'tile'])
-    pred_df.to_excel('pred.xlsx')
+    pred_df.to_excel(name_model+'.xlsx')
 
-    return pred_df, score
+    return pred_df, score, name_model
 
 
 # main_test predict with the model on the df and return the score

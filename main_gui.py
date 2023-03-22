@@ -8,13 +8,14 @@ def main():
     main_w = Tk()
     main_w.title('Lab2 Positional ML')
     main_w.geometry('500x400')
+
     OPTIONS = [
         "SELECT ALGORITHM",
         "KNN",
         "ALGO2"
     ]
 
-    MODE = ['SELECT MODE','TRAIN', 'PREDICT']
+    MODE = ['SELECT MODE', 'TRAIN', 'PREDICT']
 
     def select_data():
         global dataset
@@ -71,15 +72,19 @@ def main():
                 host = "localhost"
 
             if mode_selected == 'TRAIN':
-                pred, score = predictor.main_train_multilabel(dataset, algo_selected)
+                pred, score, name_model = predictor.main_train_multilabel(dataset, algo_selected)
                 # print res and score
-                Label(main_w, text="Result: \n" + 'pred.xlsx', foreground='green').grid(row=11, columnspan=3, pady=10)
+                print("Result: \n" + str(name_model))
+                print("Score: \n" + str(score))
+                Label(main_w, text="Result: \n" + str(name_model) +'.xlsx', foreground='green').grid(row=11, columnspan=3, pady=10)
                 Label(main_w, text="Score: \n" + str(score), foreground='green').grid(row=12, columnspan=3, pady=10)
             else:
                 if upload_model is not None:
                     res, score, final_tab = predictor.main_test(dataset, upload_model)
                     final_tab.to_excel('final_tab.xlsx')
-
+                    # print res and score
+                    print("Result: \n" + str(res))
+                    print("Score: \n" + str(score))
                     Label(main_w, text="Results saves in: \n" + 'final_tab.xlsx', foreground='green').grid(row=12, columnspan=3,
                                                                                             pady=10)
                 else:
@@ -187,3 +192,6 @@ def main():
     hosttxt.grid(row=9, column=0, padx=10)
 
     main_w.mainloop()
+
+if __name__ == '__main__':
+    main()
