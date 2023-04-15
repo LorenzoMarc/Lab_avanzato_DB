@@ -15,59 +15,72 @@ import pandas as pd
 from hyperopt import fmin, tpe, hp, Trials
 
 
-def main_train_multilabel(df_path, algo):
-    # parameter definition
+# used to find the columns of the dataframe that contains the APs
+def find_columns(df):
+    columns = []
+    for col in df.columns:
+        if 'AP' in col:
+            columns.append(col)
+    return columns
 
-    df = pd.read_csv(df_path, usecols=['fingerprint_id', 'coord_x', 'coord_y', 'building', 'floor', 'tile'],
-                     low_memory=False)
-    train, test = ud.preprocess(df)
-    train_data = train[['coord_x', 'coord_y']]
-    train_label = train[['building', 'floor', 'tile']]
-    test_label = test[['building', 'floor', 'tile']]
-    test_data = test[['coord_x', 'coord_y']]
 
-    print('Training new model...')
+def main_train_multilabel(df_train, algo, metric_distance, n=10):
+    aps = find_columns(df_train)
+    df = df_train[['fingerprint_id', 'coord_x', 'coord_y', 'building', 'floor', 'tile'] + aps]
+    print('Preprocessing data...')
+    train, test = ud.preprocess(df, aps)
+    print('Splitting data...')
+    # KNN/WKK have to be trained on regression and classfication. Features input are APs.
+    # classification: building, floor, tile
+    # regression: coord_x, coord_y
+
+    # hyperopt parameters
     params = {
         'algo_selection': algo,
-        'n_neighbors': hp.choice('n_neighbors', range(1, 100)),
-        'train_data': train_data,
-        'train_label': train_label,
-        'test_data': test_data,
-        'test_label': test_label
+        'metric_distance': metric_distance,
+        'n_neighbors': hp.choice('n_neighbors', range(1, n)),
+        'classification': ['building', 'floor', 'tile'],
+        'regression': ['coord_x', 'coord_y'],
+        'features': aps,
+        'train': train,
+        'test': test
     }
+    print('Training new model...')
+    # this is the branch to train the classifier
+    pred_df, score, name_model = mc.train_model(params, 'classification')
 
-    trials = Trials()
-    best = fmin(mc.clf, params, algo=tpe.suggest, max_evals=100, trials=trials)
-    ud.plot_results(trials)
-    model = mc.getBestModelfromTrials(trials)
-    name_model = ud.save(model)
-    # test model
-    pred, score = mc.test(model, test[['coord_x', 'coord_y']], test_label)
-    pred_df = pd.DataFrame(pred, columns=['building', 'floor', 'tile'])
-    pred_df.to_excel(name_model+'.xlsx')
+    # this is the branch to train the regressor
+    pred_df_reg, score_reg, name_model_reg = mc.train_model(params, 'regression')
 
-    return pred_df, score, name_model
+    return (pred_df, score, name_model), (pred_df_reg, score_reg, name_model_reg)
 
 
 # main_test predict with the model on the df and return the score
-def main_test(df_path, pkl_model):
-    df = pd.read_csv(df_path, usecols=['fingerprint_id', 'coord_x', 'coord_y', 'building', 'floor', 'tile'],
-                     low_memory=False)
+def main_test(df_path, pkl_model, metrics, task):
+    df = pd.read_csv(df_path, low_memory=False)
+    aps = find_columns(df)
+    df = df[['fingerprint_id', 'coord_x', 'coord_y', 'building', 'floor', 'tile'] + aps]
     # preprocess data with preprocessing function
-    df = ud.transform(df)
+    df = ud.transform(df, aps)
     # instantiate model selected by the user
     model = ud.load(pkl_model)
     # predict
-    data =df[['coord_x', 'coord_y']]
-    target = df[['building', 'floor', 'tile']]
+    data = df[aps]
+    if task == 'classification'.upper():
+        list_target = ['building', 'floor', 'tile']
+    else:
+        list_target = ['coord_x', 'coord_y']
+    target = df[list_target]
     pred = model.predict(data)
-    pred_df = pd.DataFrame(pred, columns=['building', 'floor', 'tile'])
-    pred_df.to_excel('test_pred.xlsx')
+    pred_df = pd.DataFrame(pred, columns=list_target)
+    final_res, metrics = metrics_eval.main(data, pred_df, target, metrics, task)
+    final_res = final_res.drop(aps, axis=1)
+    metrics_df = pd.DataFrame.from_records(metrics, columns=['metric', 'value'])
+    # save final_res and metrics_df in excel file
+    ud.save_excel(final_res, metrics_df)
 
-    score = model.score(df[['coord_x', 'coord_y']], df[['building', 'floor', 'tile']])
-    final_res = metrics_eval.main(data, pred_df, target)
     # create report using create_report function
     ud.create_report(final_res)
-    return pred, score, final_res
+    return pred, final_res
 
 
