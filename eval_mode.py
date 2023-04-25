@@ -1,19 +1,14 @@
-from tkinter import *
+from tkinter import Button, Label, StringVar, Toplevel, IntVar
 from tkinter.filedialog import askopenfile
-from tkinter.ttk import *
-import predictor
+from tkinter.ttk import Checkbutton, OptionMenu
+from predictor import main_test
 
 
 def main():
-    main_w = Tk()
+    main_w = Toplevel()
     main_w.title('Lab2 Positional ML')
     main_w.geometry('500x400')
     metric_list = []
-    OPTIONS = [
-        "SELECT ALGORITHM",
-        "KNN",
-        "WKNN"
-    ]
 
     TASK = ['SELECT TASK', 'REGRESSION', 'CLASSIFICATION']
 
@@ -41,14 +36,15 @@ def main():
 
     def run_main():
         task = task_selected.get()
-
+        metrics = {'RMSE': rmse_bool.get(), 'Multi': multi_met_bool.get(), 'Accuracy': acc_bool.get()}
         if dataset is None:
             print("Select a valid Dataset")
             Label(main_w, text="Select a valid Dataset", foreground='red').grid(row=10, columnspan=3, pady=10)
         else:
 
             if upload_model is not None:
-                res, final_tab = predictor.main_test(dataset, upload_model, metric_list, task)
+                print('model selected: ', upload_model)
+                res, final_tab = main_test(dataset, upload_model, metrics, task)
                 # print res
                 print("Result: \n" + str(res))
                 Label(main_w, text="Results saves in: \n" + 'final_tab.xlsx', foreground='green').grid(row=12,
@@ -81,15 +77,21 @@ def main():
     section_reg.grid(row=4, column=1, padx=10, columnspan=2)
 
     # Metrics selection
-    rmse_box = Checkbutton(main_w, text='RMSE', command=metric_list.append('RMSE'))
+
+    # Metrics selection
+    rmse_bool = IntVar()
+    multi_met_bool = IntVar()
+    acc_bool = IntVar()
+
+    rmse_box = Checkbutton(main_w, text='RMSE', variable=rmse_bool, onvalue=1, offvalue=0, command=metric_list.append('RMSE'))
     rmse_box.grid(row=5, column=0)
-    multi_met_box = Checkbutton(main_w, text='Multi', command=metric_list.append('Multi'))
+    multi_met_box = Checkbutton(main_w, text='Multi', variable=multi_met_bool, onvalue=1, offvalue=0)
     multi_met_box.grid(row=5, column=2, padx=10)
 
     section_clf = Label(main_w, text='Classification metrics')
     section_clf.grid(row=6, column=1, padx=10, columnspan=2)
 
-    acc_box = Checkbutton(main_w, text='accuracy', command=metric_list.append('Accuracy'))
+    acc_box = Checkbutton(main_w, text='accuracy', variable=acc_bool, onvalue=1, offvalue=0)
     acc_box.grid(row=7, column=1)
 
     upld = Button(
