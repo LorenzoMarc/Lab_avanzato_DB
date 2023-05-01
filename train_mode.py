@@ -44,6 +44,7 @@ def main():
     ws = Toplevel()
     ws.title('Train Mode')
     ws.geometry('750x300')
+
     OPTIONS = [
         "SELECT ALGORITHM",
         "KNN",
@@ -57,9 +58,9 @@ def main():
         "l1",
         "l2",
         "manhattan",
-        "haversine",
         "cosine"
     ]
+
     list_datasets = get_folders()
     list_datasets.insert(0, "SELECT STANDARD DATASET")
 
@@ -71,8 +72,7 @@ def main():
             row=10, columnspan=3, pady=10)
 
     def run_main():
-        # try:
-        # get values from checkbox
+
         fine_tune = var.get()
         num_eval_selected = num_eval.get()
         algo_selected = variable.get()

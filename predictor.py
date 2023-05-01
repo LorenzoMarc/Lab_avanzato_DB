@@ -1,3 +1,5 @@
+import time
+
 import model_class as mc
 import utils_data as ud
 import pandas as pd
@@ -74,13 +76,18 @@ def main_test(df_path, pkl_model, metrics, task):
     else:
         list_target = ['coord_x', 'coord_y', 'coord_z']
     target = df[list_target]
-    pred = model.predict(data)
+    try:
+        pred = model.predict(data)
+    except ValueError as e:
+        print('Caught {} \nFeatures of the Dataset are different from the Features used in training'.format(e))
+        time.sleep(90)
+        pred= 0
     pred_df = pd.DataFrame(pred, columns=list_target)
     final_res, metrics_res = metrics_eval.main(data, pred_df, target, metrics, task)
     final_res = final_res.drop(aps, axis=1)
     metrics_df = pd.DataFrame.from_records(metrics_res, columns=['metric', 'value'])
     # save final_res and metrics_df in excel file
-    ud.save_excel(final_res, metrics_df)
+    #ud.save_excel(final_res, metrics_df)
     ud.save_csv(final_res, metrics_df)
 
     # create report using create_report function
@@ -91,15 +98,17 @@ def main_test(df_path, pkl_model, metrics, task):
 # main_test_pred evaluate the prediction and the dataset uploaded by the user
 def main_test_pred(df_path, metrics):
     prediction = pd.read_csv(df_path, low_memory=False, usecols=lambda x: x in ['coord_x', 'coord_y', 'coord_z',
-                                                                 'building', 'floor', 'tile',
-                                                                 'coord_x_target', 'coord_y_target', 'coord_z_target',
-                                                                 'building_target', 'floor_target', 'tile_target'])
+                                                                                'building', 'floor', 'tile',
+                                                                                'coord_x_target', 'coord_y_target',
+                                                                                'coord_z_target',
+                                                                                'building_target', 'floor_target',
+                                                                                'tile_target'])
 
     # select the column that are not in target
-    print(prediction)
-    print(metrics)
+
     final_res, metrics = metrics_eval.user_prediction(prediction, metrics)
     metrics_df = pd.DataFrame.from_records(metrics, columns=['metric', 'value'])
     # save final_res and metrics_df in excel file
-    ud.save_excel(final_res, metrics_df)
+    #ud.save_excel(final_res, metrics_df)
+    ud.save_csv(final_res, metrics_df)
     return True

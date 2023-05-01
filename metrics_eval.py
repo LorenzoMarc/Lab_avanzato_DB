@@ -85,23 +85,23 @@ def main(data, pred, target, metrics, task):
             'class' is set to 1, otherwise it is set to 0'''
             data['class'] = np.where(data['E'] < 1.5, 1, 0)
 
-        RMSE = np.sqrt(np.mean(data['E'] ** 2))
+            RMSE = np.sqrt(np.mean(data['E'] ** 2))
 
-        # calculate the precision and recall of data['class']
-        TP = data[data['class'] == 1].shape[0]
-        FP = data[data['class'] == 0].shape[0]
-        precision = TP / (TP + FP)
-        recall = TP / data.shape[0]
-        F1 = 2 * (precision * recall) / (precision + recall)
-        # save the results in results_metrics
-        results_metrics['metric'].append('Precision')
-        results_metrics['value'].append(precision)
-        results_metrics['metric'].append('Recall')
-        results_metrics['value'].append(recall)
-        results_metrics['metric'].append('F1')
-        results_metrics['value'].append(F1)
-        results_metrics['metric'].append('RMSE')
-        results_metrics['value'].append(RMSE)
+            # calculate the precision and recall of data['class']
+            TP = data[data['class'] == 1].shape[0]
+            FP = data[data['class'] == 0].shape[0]
+            precision = TP / (TP + FP)
+            recall = TP / data.shape[0]
+            F1 = 2 * (precision * recall) / (precision + recall)
+            # save the results in results_metrics
+            results_metrics['metric'].append('Precision')
+            results_metrics['value'].append(precision)
+            results_metrics['metric'].append('Recall')
+            results_metrics['value'].append(recall)
+            results_metrics['metric'].append('F1')
+            results_metrics['value'].append(F1)
+            results_metrics['metric'].append('RMSE')
+            results_metrics['value'].append(RMSE)
         if metrics['Multi']:
             print('Calculations multiple metrics...')
             # sklearn_metrics_regression is a function applied to each row of the dataframe

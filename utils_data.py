@@ -96,7 +96,7 @@ def save_csv(final_res, metrics_df):
     metrics_df.to_csv('metrics.csv')
 
 
-def save_excel(final_res, metrics_df):
-    with pd.ExcelWriter('final_results.xlsx') as writer:
-        final_res.to_excel(writer, sheet_name='final_results')
-        metrics_df.to_excel(writer, sheet_name='metrics')
+# def save_excel(final_res, metrics_df):
+#     with pd.ExcelWriter('final_results.xlsx') as writer:
+#         final_res.to_excel(writer, sheet_name='final_results')
+#         metrics_df.to_excel(writer, sheet_name='metrics')
