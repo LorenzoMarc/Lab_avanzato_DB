@@ -28,7 +28,7 @@ def clf(parameters_list):
         n = params['n_neighbors']
     else:
         n = params['n']
-
+    # extend the dictionary with the algorithm and the task to perform
     dict_algo = {
         'KNN': {
             'classification': MultiOutputClassifier(
@@ -78,7 +78,8 @@ def train_model(params, task):
     aps = [ap for ap in params['features']]
     prediction, score = test(best_model, params['test'][aps], params['test'][labels_task])
     # save model
-    ud.save(best_model, task, algorithm, measure_distance)
+    ud.save(best_model, task, algorithm, measure_distance, aps)
+
     ud.plot_results(trials, task, algorithm, measure_distance)
 
     return prediction, score, best_model

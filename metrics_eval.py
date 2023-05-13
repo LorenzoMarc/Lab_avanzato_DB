@@ -77,46 +77,76 @@ def main(data, pred, target, metrics, task):
         return data
     # if task is regression, calculate the metric selected
     if task == 'REGRESSION':
+        # this metric calculate the euclidean distance and the RMSE
+        data['E'] = 0
+        data['E'] = data.progress_apply(lambda row: euclidean_distance(row), axis=1)
+        '''if the euclidean distance is less than 1.5 meters, the prediction is correct and the value of the column
+        'class' is set to 1, otherwise it is set to 0'''
+        data['class'] = np.where(data['E'] < 1.5, 1, 0)
         if metrics['RMSE']:
             print('Calculating RMSE metric...')
-            data['E'] = 0
-            data['E'] = data.progress_apply(lambda row: euclidean_distance(row), axis=1)
-            '''if the euclidean distance is less than 1.5 meters, the prediction is correct and the value of the column
-            'class' is set to 1, otherwise it is set to 0'''
-            data['class'] = np.where(data['E'] < 1.5, 1, 0)
-
             RMSE = np.sqrt(np.mean(data['E'] ** 2))
-
-            # calculate the precision and recall of data['class']
+            results_metrics['metric'].append('RMSE')
+            results_metrics['value'].append(RMSE)
+        # calculate the precision, recall and F1 score
+        if metrics['Precision']:
+            print('Calculating Precision metric...')
+            TP = data[data['class'] == 1].shape[0]
+            FP = data[data['class'] == 0].shape[0]
+            precision = TP / (TP + FP)
+            results_metrics['metric'].append('Precision')
+            results_metrics['value'].append(precision)
+        if metrics['Recall']:
+            print('Calculating Recall metric...')
+            TP = data[data['class'] == 1].shape[0]
+            recall = TP / data.shape[0]
+            results_metrics['metric'].append('Recall')
+            results_metrics['value'].append(recall)
+        if metrics['F1']:
+            print('Calculating F1 metric...')
             TP = data[data['class'] == 1].shape[0]
             FP = data[data['class'] == 0].shape[0]
             precision = TP / (TP + FP)
             recall = TP / data.shape[0]
             F1 = 2 * (precision * recall) / (precision + recall)
-            # save the results in results_metrics
-            results_metrics['metric'].append('Precision')
-            results_metrics['value'].append(precision)
-            results_metrics['metric'].append('Recall')
-            results_metrics['value'].append(recall)
             results_metrics['metric'].append('F1')
             results_metrics['value'].append(F1)
-            results_metrics['metric'].append('RMSE')
-            results_metrics['value'].append(RMSE)
-        if metrics['Multi']:
+        if metrics['MAE']:
             print('Calculations multiple metrics...')
-            # sklearn_metrics_regression is a function applied to each row of the dataframe
-            # and save the result in columns accuracy
-            data['Multi'] = data.progress_apply(lambda row: sklearn_metrics_regression(row), axis=1)
-            new_columns = ['mean_absolute_error', 'mean_squared_error', 'r2_score', 'explained_variance_score',
-                           'median_absolute_error', 'max_error']
-            column = 'Multi'
-            data = split_column(data, column, new_columns)
-            data.drop(columns=['Multi'], inplace=True)
-            # add metrics to results_metrics
-            for metric in new_columns:
-                results_metrics['metric'].append(metric)
-                results_metrics['value'].append(data[metric].mean())
-
+            # calculate the MAE of data['E'] and save the result in results_metrics
+            MAE = data['E'].mean()
+            results_metrics['metric'].append('MAE')
+            results_metrics['value'].append(MAE)
+        if metrics['MSE']:
+            MSE = mean_squared_error(data['E'], np.zeros(data.shape[0]))
+            results_metrics['metric'].append('MSE')
+            results_metrics['value'].append(MSE)
+        if metrics['R2']:
+            R2 = r2_score(data['E'], np.zeros(data.shape[0]))
+            results_metrics['metric'].append('R2')
+            results_metrics['value'].append(R2)
+        if metrics['EVS']:
+            EVS = explained_variance_score(data['E'], np.zeros(data.shape[0]))
+            results_metrics['metric'].append('EVS')
+            results_metrics['value'].append(EVS)
+        if metrics['MedAE']:
+            MedAE = median_absolute_error(data['E'], np.zeros(data.shape[0]))
+            results_metrics['metric'].append('MedAE')
+            results_metrics['value'].append(MedAE)
+        if metrics['ME']:
+            ME = max_error(data['E'], np.zeros(data.shape[0]))
+            results_metrics['metric'].append('ME')
+            results_metrics['value'].append(ME)
+            #
+            # new_columns = ['mean_absolute_error', 'mean_squared_error', 'r2_score', 'explained_variance_score',
+            #                'median_absolute_error', 'max_error']
+            # column = 'Multi'
+            # data = split_column(data, column, new_columns)
+            # data.drop(columns=['Multi'], inplace=True)
+            # # add metrics to results_metrics
+            # for metric in new_columns:
+            #     results_metrics['metric'].append(metric)
+            #     results_metrics['value'].append(data[metric].mean())
     # if task is classification, calculate the metric accuracy and success rate
     elif task.strip() == 'CLASSIFICATION':
         if metrics['Accuracy']:
@@ -156,44 +186,77 @@ def user_prediction(pred_df, metrics):
     # remove tab char from header of the dataframe
     pred_df.columns = pred_df.columns.str.replace('\t', '')
     pred_df = pred_df.replace('\t', '', regex=True)
-    # for each metric set to 1 calculate the metric
+    data = pred_df.copy()
+    data['E'] = 0
+    data['E'] = data.progress_apply(lambda row: euclidean_distance(row), axis=1)
+    '''if the euclidean distance is less than 1.5 meters, the prediction is correct and the value of the column
+    'class' is set to 1, otherwise it is set to 0'''
+    data['class'] = np.where(data['E'] < 1.5, 1, 0)
     if metrics['RMSE']:
         print('Calculating RMSE metric...')
-        # calculate the euclidean distance between the predicted coordinates and the target coordinates
-        pred_df['E'] = 0
-        pred_df['E'] = pred_df.progress_apply(lambda row: euclidean_distance(row), axis=1)
-        # if the euclidean distance is less than 1.5 meters, the prediction is correct and the value of the column
-        # 'class' is set to 1, otherwise it is set to 0
-        pred_df['class'] = np.where(pred_df['E'] < 1.5, 1, 0)
-        # calculate the precision and recall of data['class']
-        # keep attention with division by zero
-        TP = pred_df[pred_df['class'] == 1].shape[0]
-        FP = pred_df[pred_df['class'] == 0].shape[0]
-        precision = TP / (TP + FP)
-        recall = TP / pred_df.shape[0]
-        try:
-            F1 = 2 * (precision * recall) / (precision + recall)
-        except ZeroDivisionError:
-            F1 = 0
-        # save the results in results_metrics
-        results_metrics = {'metric': ['Precision', 'Recall', 'F1'], 'value': [precision, recall, F1]}
-        RMSE = np.sqrt(np.mean(pred_df['E'] ** 2))
+        RMSE = np.sqrt(np.mean(data['E'] ** 2))
         results_metrics['metric'].append('RMSE')
         results_metrics['value'].append(RMSE)
-    if metrics['Multi']:
-            print('Calculations multiple metrics...')
-            # sklearn_metrics_regression is a function applied to each row of the dataframe
-            # and save the result in columns accuracy
-            pred_df['Multi'] = pred_df.progress_apply(lambda row: sklearn_metrics_regression(row), axis=1)
-            new_columns = ['mean_absolute_error', 'mean_squared_error', 'r2_score', 'explained_variance_score',
-                           'median_absolute_error', 'max_error']
-            column = 'Multi'
-            pred_df = split_column(pred_df, column, new_columns)
-            pred_df.drop(columns=['Multi'], inplace=True)
-            # add metrics to results_metrics
-            for metric in new_columns:
-                results_metrics['metric'].append(metric)
-                results_metrics['value'].append(pred_df[metric].mean())
+    # calculate the precision, recall and F1 score
+    if metrics['Precision']:
+        print('Calculating Precision metric...')
+        TP = data[data['class'] == 1].shape[0]
+        FP = data[data['class'] == 0].shape[0]
+        precision = TP / (TP + FP)
+        results_metrics['metric'].append('Precision')
+        results_metrics['value'].append(precision)
+    if metrics['Recall']:
+        print('Calculating Recall metric...')
+        TP = data[data['class'] == 1].shape[0]
+        recall = TP / data.shape[0]
+        results_metrics['metric'].append('Recall')
+        results_metrics['value'].append(recall)
+    if metrics['F1']:
+        print('Calculating F1 metric...')
+        TP = data[data['class'] == 1].shape[0]
+        FP = data[data['class'] == 0].shape[0]
+        precision = TP / (TP + FP)
+        recall = TP / data.shape[0]
+        F1 = 2 * (precision * recall) / (precision + recall)
+        results_metrics['metric'].append('F1')
+        results_metrics['value'].append(F1)
+    if metrics['MAE']:
+        print('Calculations multiple metrics...')
+        # calculate the MAE of data['E'] and save the result in results_metrics
+        MAE = data['E'].mean()
+        results_metrics['metric'].append('MAE')
+        results_metrics['value'].append(MAE)
+    if metrics['MSE']:
+        MSE = mean_squared_error(data['E'], np.zeros(data.shape[0]))
+        results_metrics['metric'].append('MSE')
+        results_metrics['value'].append(MSE)
+    if metrics['R2']:
+        R2 = r2_score(data['E'], np.zeros(data.shape[0]))
+        results_metrics['metric'].append('R2')
+        results_metrics['value'].append(R2)
+    if metrics['EVS']:
+        EVS = explained_variance_score(data['E'], np.zeros(data.shape[0]))
+        results_metrics['metric'].append('EVS')
+        results_metrics['value'].append(EVS)
+    if metrics['MedAE']:
+        MedAE = median_absolute_error(data['E'], np.zeros(data.shape[0]))
+        results_metrics['metric'].append('MedAE')
+        results_metrics['value'].append(MedAE)
+    if metrics['ME']:
+        ME = max_error(data['E'], np.zeros(data.shape[0]))
+        results_metrics['metric'].append('ME')
+        results_metrics['value'].append(ME)
+        #
+        # new_columns = ['mean_absolute_error', 'mean_squared_error', 'r2_score', 'explained_variance_score',
+        #                'median_absolute_error', 'max_error']
+        # column = 'Multi'
+        # data = split_column(data, column, new_columns)
+        # data.drop(columns=['Multi'], inplace=True)
+        # # add metrics to results_metrics
+        # for metric in new_columns:
+        #     results_metrics['metric'].append(metric)
+        #     results_metrics['value'].append(data[metric].mean())
+    # if task is classification, calculate the metric accuracy and success rate
     if metrics['Accuracy']:
             print('Calculating accuracy metric...')
             pred_df['acc'] = pred_df.progress_apply(lambda row: accuracy_metric(row), axis=1)

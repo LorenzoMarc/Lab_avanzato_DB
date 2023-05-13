@@ -1,10 +1,14 @@
 import pickle as pkl
 from datetime import datetime
-import pandas as pd
+
+import numpy as np
+from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split  # for splitting the data into train and test samples
 from sklearn.preprocessing import MinMaxScaler  # for feature scaling
 from sklearn.preprocessing import OrdinalEncoder  # to encode categorical variables
 from matplotlib.pyplot import savefig, subplots
+
+
 # from pandas_profiling import ProfileReport
 
 
@@ -12,8 +16,11 @@ def plot_results(trials, task, algo, measure):
     f, ax = subplots(1)  # , figsize=(10,10))
     xs = [t['misc']['vals']['n_neighbors'] for t in trials.trials]
     ys = [-t['result']['loss'] for t in trials.trials]
-    ax.scatter(xs, ys, s=20, linewidth=0.01, alpha=0.5)
-    ax.set_title( str(task) + ' - ' + str(algo), fontsize=18)
+    xs = np.array(xs).squeeze()
+    ys = np.array(ys).squeeze()
+    ax.bar(xs, ys, width=0.5, linewidth=0.5, alpha=0.5)
+    # ax.scatter(xs, ys, s=20, linewidth=0.01, alpha=0.5)
+    ax.set_title(str(task) + ' - ' + str(algo), fontsize=18)
     ax.set_xlabel('n_neighbors', fontsize=12)
     ax.set_ylabel('cross validation accuracy', fontsize=12)
     print('saving plot...')
@@ -23,9 +30,9 @@ def plot_results(trials, task, algo, measure):
 # test function that evaluates the model on the test data and return the score
 def test(model, test_data, test_label):
     # Make a prediction using the optimized model
-    prediction = model.predict( test_data )
+    prediction = model.predict(test_data)
     # Report the accuracy of the classifier on a given set of data
-    score = model.score( test_data, test_label )
+    score = model.score(test_data, test_label)
     return score
 
 
@@ -49,7 +56,7 @@ def transform(df, aps):
 
 
 # save function save the model
-def save(model, task, algorithm, distance):
+def save(model, task, algorithm, distance, aps):
     # Save the model
     print('Saving model...')
     # timestamp datetime
@@ -57,7 +64,9 @@ def save(model, task, algorithm, distance):
     ts = date.timestamp()
     ts = str(ts).split('.')[0]
     name_model_f = 'model_{}_{}_{}_{}'.format(task, algorithm, distance, ts)
-    with open(name_model_f+'.pkl', 'wb') as f:
+    with open(name_model_f + '.pkl', 'wb') as f:
+        # save aps as list of features in the model
+        model.aps = aps
         pkl.dump(model, f)
     f.close()
     return name_model_f
@@ -72,11 +81,14 @@ def load(model_path):
     return model
 
 
-def preprocess(df, aps):
+def preprocess(df, aps, test):
     # min-max scaling and ordinal encoding data
     df = transform(df, aps)
     # split
-    df_train, df_test = train_test_split(df, test_size=0.2, random_state=42)
+
+    if test > 0.99:
+        print('error the test size cannot be more then .99')
+    df_train, df_test = train_test_split(df, test_size=test, random_state=42)
     return df_train, df_test
 
 
@@ -100,3 +112,11 @@ def save_csv(final_res, metrics_df):
 #     with pd.ExcelWriter('final_results.xlsx') as writer:
 #         final_res.to_excel(writer, sheet_name='final_results')
 #         metrics_df.to_excel(writer, sheet_name='metrics')
+
+
+def features_check(data_test, aps_train):
+    try:
+        data_test = data_test[aps_train]
+    except KeyError:
+        print('data_test != aps_train')
+    return data_test

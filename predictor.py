@@ -27,11 +27,12 @@ def find_columns(df):
     return columns
 
 
-def main_train_multilabel(df_train, algo, measure_distance, tuning, num_eval=20, n=10):
+def main_train_multilabel(df_train, algo, measure_distance, tuning, num_eval=20, n=10, test_size=0.2):
+
     aps = find_columns(df_train)
     df = df_train[['fingerprint_id', 'coord_x', 'coord_y', 'coord_z', 'building', 'floor', 'tile'] + aps]
     print('Preprocessing data...')
-    train, test = ud.preprocess(df, aps)
+    train, test = ud.preprocess(df, aps, test_size)
     print('Splitting data...')
     # KNN/WKK have to be trained on regression and classification. Features input are APs.
     # classification: building, floor, tile
@@ -71,6 +72,8 @@ def main_test(df_path, pkl_model, metrics, task):
     model = ud.load(pkl_model)
     # predict
     data = df[aps]
+    data = ud.features_check(data, model.aps)
+    aps = data.columns
     if task.upper() == 'classification'.upper():
         list_target = ['building', 'floor', 'tile']
     else:

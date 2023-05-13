@@ -55,8 +55,6 @@ def main():
         "SELECT METRICS",
         "cityblock",
         "euclidean",
-        "l1",
-        "l2",
         "manhattan",
         "cosine"
     ]
@@ -67,9 +65,13 @@ def main():
     def select_data():
         global standard_dataset
         path = askopenfile(mode='r', filetypes=[('csv', '*csv')])
-        standard_dataset = path.name
-        Label(ws, text="Dataset selected: \n" + str(standard_dataset), foreground='green').grid(
-            row=10, columnspan=3, pady=10)
+        try:
+            standard_dataset = path.name
+            Label(ws, text="Dataset selected: \n" + str(standard_dataset), foreground='green').grid(
+                row=10, columnspan=3, pady=10)
+        except AttributeError:
+            print('No file selected')
+            Label(ws, text="No file selected", foreground='red').grid(row=10, columnspan=3, pady=10)
 
     def run_main():
 
@@ -79,6 +81,7 @@ def main():
         measure_selected = variable_measure.get()
         n_neigh = int(num_neighbors.get())
         dataset_sel = list_name.get()
+        test_size = float(test_size_text.get())
 
         training_set = 'None training set selected'
         if dataset_sel in list_datasets[1:]:
@@ -103,7 +106,7 @@ def main():
         else:
 
             res_class, res_reg = predictor.main_train_multilabel(training_set, algo_selected, measure_selected,
-                                                                 fine_tune, num_eval_selected, n_neigh)
+                                                                 fine_tune, num_eval_selected, n_neigh, test_size)
             # print res and score
             name_model = res_class[0]
             score = res_class[1]
@@ -154,6 +157,11 @@ def main():
     num_eval = Entry(ws)
     num_eval.grid(row=2, column=1)
 
+    # var num test_size
+    Label(ws, text='Test Size for training').grid(row=4, column=0, padx=5)
+    test_size_text = Entry(ws)
+    test_size_text.grid(row=4, column=1)
+
     # LIST select algorithm
     measure_list = Label(ws, text='Select measure distance')
     measure_list.grid(row=3, column=0, padx=10)
@@ -171,6 +179,6 @@ def main():
         text='Compute Files',
         command=run_main
     )
-    upld.grid(row=4, columnspan=3, pady=10, column=2)
+    upld.grid(row=5, columnspan=3, pady=10, column=2)
 
     ws.mainloop()
