@@ -1,3 +1,8 @@
+"""
+this is the main UI for the project. It makes available
+the 3 modes of the project: train, evaluate and evaluate prediction
+"""
+
 from tkinter import Button, Tk, CENTER
 from train_mode import main as train
 from eval_mode import main as eval

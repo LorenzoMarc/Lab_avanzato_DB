@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split  # for splitting the data i
 from sklearn.preprocessing import MinMaxScaler  # for feature scaling
 from sklearn.preprocessing import OrdinalEncoder  # to encode categorical variables
 from matplotlib.pyplot import savefig, subplots
-
+import pandas as pd
 
 # from pandas_profiling import ProfileReport
 
@@ -36,22 +36,24 @@ def test(model, test_data, test_label):
     return score
 
 
-def transform(df, aps):
-    # Do Min-Max scaling
-    scaler = MinMaxScaler()
-    # fit transform all the AP columns
+def transform(df, aps, scaler, enc):
+    # fit transform all the AP columns and target columns
     df[aps] = df[aps].fillna(100)
-    df['coord_z'] = df['coord_z'].fillna(100)
-    df[aps] = scaler.fit_transform(df[aps])
-    df['coord_x'] = scaler.fit_transform(df[['coord_x']])
-    df['coord_y'] = scaler.fit_transform(df[['coord_y']])
-    df['coord_z'] = scaler.fit_transform(df[['coord_z']])
-    enc = OrdinalEncoder()  # select the encoder
-    df['building'] = enc.fit_transform(df[['building']])  # encode categorical values
-    df['floor'] = enc.fit_transform(df[['floor']])
-    df['tile'] = enc.fit_transform(df[['tile']])
+    df[['coord_x', 'coord_y', 'coord_z']] = df[['coord_x', 'coord_y', 'coord_z']].fillna(0)
+    # fill categorical missing values with 'missing'
+    df[['building', 'floor', 'tile']] = df[['building', 'floor', 'tile']].fillna('missing')
+    df[['coord_x', 'coord_y', 'coord_z'] + aps] = scaler.fit_transform(df[['coord_x', 'coord_y', 'coord_z'] + aps])
+    df[['building', 'floor', 'tile']] = enc.fit_transform(df[['building', 'floor', 'tile']])
     # drop the rows with missing values
     df = df.dropna()
+    return df
+
+
+# this function reverse transform function from min-max scaling to original values
+def reverse_transform(df, aps, scaler, decoder):
+
+    df[['coord_x', 'coord_y', 'coord_z'] + aps] = scaler.inverse_transform(df[['coord_x', 'coord_y', 'coord_z'] + aps])
+    df[['building', 'floor', 'tile']] = decoder.inverse_transform(df[['building', 'floor', 'tile']])
     return df
 
 
@@ -83,12 +85,18 @@ def load(model_path):
 
 def preprocess(df, aps, test):
     # min-max scaling and ordinal encoding data
-    df = transform(df, aps)
-    # split
-
+    scaler = MinMaxScaler()
+    enc= OrdinalEncoder()
+    # fill numeric missing values with 100
+    df[aps] = df[aps].fillna(100)
+    df[['coord_x', 'coord_y', 'coord_z']] = df[['coord_x', 'coord_y', 'coord_z']].fillna(0)
+    # fill categorical missing values with 'missing'
+    df[['building', 'floor', 'tile']] = df[['building', 'floor', 'tile']].fillna('missing')
     if test > 0.99:
         print('error the test size cannot be more then .99')
     df_train, df_test = train_test_split(df, test_size=test, random_state=42)
+    df_train = transform(df_train, aps, scaler, enc)
+
     return df_train, df_test
 
 
@@ -108,10 +116,10 @@ def save_csv(final_res, metrics_df):
     metrics_df.to_csv('metrics.csv')
 
 
-# def save_excel(final_res, metrics_df):
-#     with pd.ExcelWriter('final_results.xlsx') as writer:
-#         final_res.to_excel(writer, sheet_name='final_results')
-#         metrics_df.to_excel(writer, sheet_name='metrics')
+def save_excel(final_res, metrics_df):
+    with pd.ExcelWriter('final_results.xlsx') as writer:
+        final_res.to_excel(writer, sheet_name='final_results')
+        metrics_df.to_excel(writer, sheet_name='metrics')
 
 
 def features_check(data_test, aps_train):

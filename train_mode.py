@@ -26,7 +26,6 @@ def merge_fingerprints_wifi_obs(path_folder):
             return None
         else:
             try:
-                # merge fingerprints.csv and wifi_obs.csv
                 df_fingerprints = pd.read_csv(f)
                 df_wifi_obs = pd.read_csv(w)
                 df_files = pd.merge(df_fingerprints, df_wifi_obs, on='fingerprint_id')
@@ -45,12 +44,14 @@ def main():
     ws.title('Train Mode')
     ws.geometry('750x300')
 
+    # if ypu add a new algotithm you have to add it to this list to make it selectable
     OPTIONS = [
         "SELECT ALGORITHM",
         "KNN",
         "WKNN"
     ]
 
+    # If you want to add a new algorithm, add it to this list
     measure_distance = [
         "SELECT METRICS",
         "cityblock",
@@ -81,8 +82,13 @@ def main():
         measure_selected = variable_measure.get()
         n_neigh = int(num_neighbors.get())
         dataset_sel = list_name.get()
-        test_size = float(test_size_text.get())
 
+        try:
+            test_size = float(test_size_text.get())
+        except:
+            test_size = 0.2
+
+        # checking input ...
         training_set = 'None training set selected'
         if dataset_sel in list_datasets[1:]:
             path_folder = os.path.join(os.getcwd(), 'datasets', dataset_sel)
@@ -104,10 +110,10 @@ def main():
             print("Select a valid measure")
             Label(ws, text="Select a valid measure", foreground='red').grid(row=10, columnspan=3, pady=10)
         else:
-
+            # everything is ok, run main training function
             res_class, res_reg = predictor.main_train_multilabel(training_set, algo_selected, measure_selected,
                                                                  fine_tune, num_eval_selected, n_neigh, test_size)
-            # print res and score
+            # print res and score of the first model
             name_model = res_class[0]
             score = res_class[1]
 

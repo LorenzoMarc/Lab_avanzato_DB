@@ -35,7 +35,7 @@ def main():
 
     def run_main():
         task = task_selected.get()
-        # add in metrics dictionary the metrics precision, recall, f1, accuracy, rmse, mae, mape, r2
+        # add in metrics dictionary the metrics you want to implement
         metrics = { 'RMSE': rmse_bool.get(), 'Precision': precision_bool.get(), 'Recall': recall_bool.get(),
                     'F1': f1_bool.get(), 'MAE': mae_bool.get(), 'MSE': mse_bool.get(), 'ME': me_bool.get(),
                      'R2': r2_bool.get(), 'EVS': evs_bool.get(), 'MedAE': medae_bool.get(),

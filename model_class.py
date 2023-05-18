@@ -2,10 +2,12 @@ from sklearn.multioutput import MultiOutputClassifier, MultiOutputRegressor
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from numpy import argmin
 from hyperopt import fmin, tpe, Trials, STATUS_OK
+from sklearn.preprocessing import OrdinalEncoder
+
 import utils_data as ud
 
 
-def getBestModelfromTrials(trials):
+def get_best_model_trials(trials):
     valid_trial_list = [trial for trial in trials
                         if STATUS_OK == trial['result']['status']]
     losses = [float(trial['result']['loss']) for trial in valid_trial_list]
@@ -14,6 +16,8 @@ def getBestModelfromTrials(trials):
     return best_trial_obj['result']['Trained_Model']
 
 
+# the actual classifier/regression function
+# this is where the magic happens
 def clf(parameters_list):
     params = parameters_list[0]
     task = parameters_list[1]
@@ -72,7 +76,7 @@ def train_model(params, task):
     num_eval = params['num_eval']
     # get the model
     model = fmin(clf, [params, task], algo=tpe.suggest, max_evals=int(num_eval), trials=trials)
-    best_model = getBestModelfromTrials(trials)
+    best_model = get_best_model_trials(trials)
     # get the prediction and the score
     labels_task = [lab for lab in params[task]]
     aps = [ap for ap in params['features']]

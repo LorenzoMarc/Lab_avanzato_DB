@@ -1,5 +1,8 @@
 import time
 
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler, OrdinalEncoder
+
 import model_class as mc
 import utils_data as ud
 import pandas as pd
@@ -19,7 +22,7 @@ and columns df['coord_x', 'coord_y'] as input
 
 
 # used to find the columns of the dataframe that contains the APs
-def find_columns(df):
+def find_aps(df):
     columns = []
     for col in df.columns:
         if 'AP' in col:
@@ -29,10 +32,20 @@ def find_columns(df):
 
 def main_train_multilabel(df_train, algo, measure_distance, tuning, num_eval=20, n=10, test_size=0.2):
 
-    aps = find_columns(df_train)
+    # find the columns of the dataframe that contains the APs
+    aps = find_aps(df_train)
     df = df_train[['fingerprint_id', 'coord_x', 'coord_y', 'coord_z', 'building', 'floor', 'tile'] + aps]
     print('Preprocessing data...')
-    train, test = ud.preprocess(df, aps, test_size)
+    enc = OrdinalEncoder()
+    # fill numeric missing APs with 100
+    df[aps] = df[aps].fillna(100)
+    df[['coord_x', 'coord_y', 'coord_z']] = df[['coord_x', 'coord_y', 'coord_z']].fillna(0)
+    # fill categorical missing values with 'missing'
+    df[['building', 'floor', 'tile']] = df[['building', 'floor', 'tile']].fillna('missing')
+    df[['building','floor', 'tile']] = enc.fit_transform(df[['building', 'floor', 'tile']])
+    if test_size > 0.99:
+        print('error the test size cannot be more then .99')
+    train, test = train_test_split(df, test_size=test_size, random_state=42)
     print('Splitting data...')
     # KNN/WKK have to be trained on regression and classification. Features input are APs.
     # classification: building, floor, tile
@@ -52,46 +65,59 @@ def main_train_multilabel(df_train, algo, measure_distance, tuning, num_eval=20,
         'num_eval': num_eval
     }
     print('Training new model...')
-    # this is the branch to train the classifier
-    pred_df, score, name_model = mc.train_model(params, 'classification')
 
-    # this is the branch to train the regressor
-    pred_df_reg, score_reg, name_model_reg = mc.train_model(params, 'regression')
+    pred_clf, score, name_model = mc.train_model(params, 'classification')
+    pred_reg, score_reg, name_model_reg = mc.train_model(params, 'regression')
+    decoded_clf = enc.inverse_transform(pred_clf)
 
-    return (pred_df, score, name_model), (pred_df_reg, score_reg, name_model_reg)
+    return (decoded_clf, score, name_model), (pred_reg, score_reg, name_model_reg)
 
 
 # main_test predict with the model on the df and return the score
 def main_test(df_path, pkl_model, metrics, task):
     df = pd.read_csv(df_path, low_memory=False)
-    aps = find_columns(df)
+    aps = find_aps(df)
     df = df[['fingerprint_id', 'coord_x', 'coord_y', 'coord_z', 'building', 'floor', 'tile'] + aps]
-    # preprocess data with preprocessing function
-    df = ud.transform(df, aps)
-    # instantiate model selected by the user
-    model = ud.load(pkl_model)
-    # predict
-    data = df[aps]
-    data = ud.features_check(data, model.aps)
-    aps = data.columns
+    df[aps] = df[aps].fillna(100)
+
+    df[['coord_x', 'coord_y', 'coord_z']] = df[['coord_x', 'coord_y', 'coord_z']].fillna(0)
+    # fill categorical missing values with 'missing'
+    df[['building', 'floor', 'tile']] = df[['building', 'floor', 'tile']].fillna('missing')
+    enc = OrdinalEncoder()
+    df[['building','floor', 'tile']] = enc.fit_transform(df[['building', 'floor', 'tile']])
+
     if task.upper() == 'classification'.upper():
         list_target = ['building', 'floor', 'tile']
+        non_target = ['coord_x', 'coord_y', 'coord_z']
+        not_target = df[non_target]
     else:
         list_target = ['coord_x', 'coord_y', 'coord_z']
+        non_target = ['building', 'floor', 'tile']
+        not_target = df[non_target]
+
     target = df[list_target]
+    model = ud.load(pkl_model)
+    features = ud.features_check(df, model.aps)
+    common_aps = features.columns
     try:
-        pred = model.predict(data)
+        pred = model.predict(features)
     except ValueError as e:
         print('Caught {} \nFeatures of the Dataset are different from the Features used in training'.format(e))
         time.sleep(90)
-        pred= 0
+        pred = 0
     pred_df = pd.DataFrame(pred, columns=list_target)
-    final_res, metrics_res = metrics_eval.main(data, pred_df, target, metrics, task)
-    final_res = final_res.drop(aps, axis=1)
+    # evaluate the prediction made by the model with the metrics selected
+    final_res, metrics_res = metrics_eval.main(features, pred_df, target, not_target,
+                                               metrics,
+                                               task)
+    final_res = final_res.drop(common_aps, axis=1)
     metrics_df = pd.DataFrame.from_records(metrics_res, columns=['metric', 'value'])
+    final_res[['building', 'floor', 'tile']] = enc.inverse_transform(final_res[['building', 'floor', 'tile']])
+    final_res[['building_target', 'floor_target', 'tile_target']] =\
+        enc.inverse_transform(final_res[['building_target', 'floor_target', 'tile_target']])
     # save final_res and metrics_df in excel file
-    #ud.save_excel(final_res, metrics_df)
-    ud.save_csv(final_res, metrics_df)
+    ud.save_excel(final_res, metrics_df)
+    #ud.save_csv(final_res, metrics_df)
 
     # create report using create_report function
     # ud.create_report(final_res)
