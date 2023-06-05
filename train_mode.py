@@ -137,7 +137,7 @@ def main():
                                     'Number of neighbors': [n_neigh],
                                     'Test size': [test_size],
                                     'Score': [score]})
-            df.to_excel(str(algo_selected) + '_param.xlsx', index=False)
+            df.to_csv(str(algo_selected) + '_param.csv', index=False)
 
     # LIST standard datasets
     datasets_iso = Label(ws, text='Standard Dataset')
