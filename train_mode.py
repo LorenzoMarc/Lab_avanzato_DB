@@ -114,14 +114,30 @@ def main():
             res_class, res_reg = predictor.main_train_multilabel(training_set, algo_selected, measure_selected,
                                                                  fine_tune, num_eval_selected, n_neigh, test_size)
             # print res and score of the first model
-            name_model = res_class[0]
+            result_model = res_class[0]
             score = res_class[1]
-
-            print("Result: \n" + str(name_model))
+            # print the parameters selected for the training and save in xlsx file
+            print("Parameters selected: \n")
+            print("Algorithm: " + str(algo_selected))
+            print("Measure: " + str(measure_selected))
+            print("Fine tune: " + str(fine_tune))
+            print("Number of evaluations: " + str(num_eval_selected))
+            print("Number of neighbors: " + str(n_neigh))
+            print("Test size: " + str(test_size))
+            print("Result: \n" + str(result_model))
             print("Score: \n" + str(score))
-            Label(ws, text="Result: \n" + str(name_model) + '.xlsx', foreground='green').grid(row=11, columnspan=3,
+            Label(ws, text="Result: \n" + str(result_model) + '.xlsx', foreground='green').grid(row=11, columnspan=3,
                                                                                               pady=10)
             Label(ws, text="Score: \n" + str(score), foreground='green').grid(row=12, columnspan=3, pady=10)
+            # save the parameters selected for the training in xlsx file
+            df = pd.DataFrame({'Algorithm': [algo_selected],
+                                 'Measure': [measure_selected],
+                                    'Fine tune': [bool(fine_tune)],
+                                    'Number of evaluations': [num_eval_selected],
+                                    'Number of neighbors': [n_neigh],
+                                    'Test size': [test_size],
+                                    'Score': [score]})
+            df.to_excel(str(algo_selected) + '_param.xlsx', index=False)
 
     # LIST standard datasets
     datasets_iso = Label(ws, text='Standard Dataset')

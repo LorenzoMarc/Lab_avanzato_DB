@@ -1,7 +1,7 @@
 import time
 
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler, OrdinalEncoder
+from sklearn.preprocessing import OrdinalEncoder
 
 import model_class as mc
 import utils_data as ud
@@ -20,29 +20,22 @@ The second function is a main function that calls the model_class module to sele
 and columns df['coord_x', 'coord_y'] as input
 '''
 
-
-# used to find the columns of the dataframe that contains the APs
-def find_aps(df):
-    columns = []
-    for col in df.columns:
-        if 'AP' in col:
-            columns.append(col)
-    return columns
-
-
 def main_train_multilabel(df_train, algo, measure_distance, tuning, num_eval=20, n=10, test_size=0.2):
 
     # find the columns of the dataframe that contains the APs
-    aps = find_aps(df_train)
+    aps = ud.find_aps(df_train)
     df = df_train[['fingerprint_id', 'coord_x', 'coord_y', 'coord_z', 'building', 'floor', 'tile'] + aps]
     print('Preprocessing data...')
     enc = OrdinalEncoder()
     # fill numeric missing APs with 100
     df[aps] = df[aps].fillna(100)
     df[['coord_x', 'coord_y', 'coord_z']] = df[['coord_x', 'coord_y', 'coord_z']].fillna(0)
+    # remove 'tile_' from tile column if present
+    df['tile'] = df['tile'].str.replace('tile_', '')
     # fill categorical missing values with 'missing'
     df[['building', 'floor', 'tile']] = df[['building', 'floor', 'tile']].fillna('missing')
     df[['building','floor', 'tile']] = enc.fit_transform(df[['building', 'floor', 'tile']])
+
     if test_size > 0.99:
         print('error the test size cannot be more then .99')
     train, test = train_test_split(df, test_size=test_size, random_state=42)
@@ -76,16 +69,17 @@ def main_train_multilabel(df_train, algo, measure_distance, tuning, num_eval=20,
 # main_test predict with the model on the df and return the score
 def main_test(df_path, pkl_model, metrics, task):
     df = pd.read_csv(df_path, low_memory=False)
-    aps = find_aps(df)
+    aps = ud.find_aps(df)
     df = df[['fingerprint_id', 'coord_x', 'coord_y', 'coord_z', 'building', 'floor', 'tile'] + aps]
     df[aps] = df[aps].fillna(100)
 
     df[['coord_x', 'coord_y', 'coord_z']] = df[['coord_x', 'coord_y', 'coord_z']].fillna(0)
     # fill categorical missing values with 'missing'
     df[['building', 'floor', 'tile']] = df[['building', 'floor', 'tile']].fillna('missing')
+    # remove 'tile_' from tile column
+    df['tile'] = df['tile'].str.replace('tile_', '')
     enc = OrdinalEncoder()
     df[['building','floor', 'tile']] = enc.fit_transform(df[['building', 'floor', 'tile']])
-
     if task.upper() == 'classification'.upper():
         list_target = ['building', 'floor', 'tile']
         non_target = ['coord_x', 'coord_y', 'coord_z']
@@ -99,6 +93,7 @@ def main_test(df_path, pkl_model, metrics, task):
     model = ud.load(pkl_model)
     features = ud.features_check(df, model.aps)
     common_aps = features.columns
+
     try:
         pred = model.predict(features)
     except ValueError as e:
@@ -111,13 +106,15 @@ def main_test(df_path, pkl_model, metrics, task):
                                                metrics,
                                                task)
     final_res = final_res.drop(common_aps, axis=1)
+
     metrics_df = pd.DataFrame.from_records(metrics_res, columns=['metric', 'value'])
-    final_res[['building', 'floor', 'tile']] = enc.inverse_transform(final_res[['building', 'floor', 'tile']])
-    final_res[['building_target', 'floor_target', 'tile_target']] =\
-        enc.inverse_transform(final_res[['building_target', 'floor_target', 'tile_target']])
+    # final_res[['building', 'floor', 'tile']] = enc.inverse_transform(final_res[['building', 'floor', 'tile']])
+    if task.upper() == 'classification'.upper():
+        final_res[['building_target', 'floor_target', 'tile_target']] =\
+            enc.inverse_transform(final_res[['building_target', 'floor_target', 'tile_target']])
     # save final_res and metrics_df in excel file
-    ud.save_excel(final_res, metrics_df)
-    #ud.save_csv(final_res, metrics_df)
+    # ud.save_excel(final_res, metrics_df)
+    ud.save_csv(final_res, metrics_df)
 
     # create report using create_report function
     # ud.create_report(final_res)
@@ -138,6 +135,6 @@ def main_test_pred(df_path, metrics):
     final_res, metrics = metrics_eval.user_prediction(prediction, metrics)
     metrics_df = pd.DataFrame.from_records(metrics, columns=['metric', 'value'])
     # save final_res and metrics_df in excel file
-    #ud.save_excel(final_res, metrics_df)
+    # ud.save_excel(final_res, metrics_df)
     ud.save_csv(final_res, metrics_df)
     return True

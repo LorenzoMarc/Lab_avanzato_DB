@@ -2,7 +2,6 @@ from sklearn.multioutput import MultiOutputClassifier, MultiOutputRegressor
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from numpy import argmin
 from hyperopt import fmin, tpe, Trials, STATUS_OK
-from sklearn.preprocessing import OrdinalEncoder
 
 import utils_data as ud
 

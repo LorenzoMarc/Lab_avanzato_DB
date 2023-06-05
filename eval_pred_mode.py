@@ -9,7 +9,7 @@ from tkinter import IntVar
 
 def main():
     main_w = Toplevel()
-    main_w.title('Lab2 Positional ML')
+    main_w.title('Your Prediction Evaluation')
     main_w.geometry('500x400')
 
     # read and save the prediction .csv file uploaded by the user
@@ -26,17 +26,20 @@ def main():
             prediction = None
 
     def run_main():
-        metrics = {'RMSE': rmse_bool.get(), 'Precision': precision_bool.get(), 'Recall': recall_bool.get(),
-                   'F1': f1_bool.get(), 'MAE': mae_bool.get(), 'MSE': mse_bool.get(), 'ME': me_bool.get(),
-                   'R2': r2_bool.get(), 'EVS': evs_bool.get(), 'MedAE': medae_bool.get(),
-                   'Accuracy': acc_bool.get()}
+        metrics = { 'RMSE': rmse_bool.get(), 'Precision': precision_bool.get(), 'Recall': recall_bool.get(),
+                    'F1': f1_bool.get(), 'MAE': mae_bool.get(), 'MSE': mse_bool.get(), 'ME': me_bool.get(),
+                     'R2': r2_bool.get(), 'EVS': evs_bool.get(), 'MedAE': medae_bool.get(),
+                    'Accuracy': acc_bool.get(), '2D Error': error2d_bool.get(), 'fdp': fdp_bool.get()}
         if prediction is None:
             print("Select a valid prediction")
             Label(main_w, text="Select a valid prediction", foreground='red').grid(row=12, columnspan=3, pady=10)
         else:
             done = main_test_pred(prediction, metrics)
             # print res
-            print("Result: \n" + str(done))
+            if done:
+                print("Result avaialble in metrics.csv")
+            else:
+                print("Error in the evaluation")
 
     # BUTTON upload your prediction
     btn_pred = Button(main_w, text='Upload your prediction',
@@ -59,6 +62,8 @@ def main():
     mse_bool = IntVar()
     evs_bool = IntVar()
     medae_bool = IntVar()
+    error2d_bool = IntVar()
+    fdp_bool = IntVar()
 
     # Create checkbox for each metric
     rmse_box = Checkbutton(main_w, text='RMSE', variable=rmse_bool, onvalue=1, offvalue=0, )
@@ -81,6 +86,10 @@ def main():
     me_box.grid(row=7, column=1)
     r2_box = Checkbutton(main_w, text='R2', variable=r2_bool, onvalue=1, offvalue=0)
     r2_box.grid(row=7, column=2)
+    error2d_box = Checkbutton(main_w, text='2D Error', variable=error2d_bool, onvalue=1, offvalue=0)
+    error2d_box.grid(row=7, column=3)
+    fdp_box = Checkbutton(main_w, text='Floor Detection Rate', variable=fdp_bool, onvalue=1, offvalue=0)
+    fdp_box.grid(row=6, column=3)
 
     section_clf = Label(main_w, text='Classification metrics')
     section_clf.grid(row=8, column=1, padx=10, columnspan=2)
