@@ -70,10 +70,12 @@ def main():
     tasks.grid(row=0, columnspan=1, column=1)
 
     # BUTTON custom model
+    Label(main_w, text='Upload trained model').grid(row=1, column=0, padx=10)
     btn_model = Button(main_w, text='Upload your pickle model', command=select_pickle)
     btn_model.grid(row=1, column=1)
 
     # BUTTON select dataset
+    Label(main_w, text='Dataset compliant to Indoor Positioning DB').grid(row=2, column=0, padx=10)
     btn = Button(main_w, text='Select dataset', command=select_data)
     btn.grid(row=2, column=1)
 
@@ -130,6 +132,7 @@ def main():
 
     acc_box = Checkbutton(main_w, text='accuracy', variable=acc_bool, onvalue=1, offvalue=0)
     acc_box.grid(row=10, column=1)
+
 
     upld = Button(
         main_w,

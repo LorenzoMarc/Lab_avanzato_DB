@@ -13,6 +13,10 @@ main_w.title('Lab2 Positional ML')
 main_w.geometry('350x250')
 
 
+# TODO:
+## aggiungere descrizione parametri di default
+
+
 def run_train():
     train()
 

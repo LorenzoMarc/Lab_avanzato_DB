@@ -175,7 +175,7 @@ def main():
     Checkbutton(ws, text="Fine tune model", variable=var, offvalue=False, onvalue=True).grid(row=2, column=3, sticky=W)
 
     # var num evaluation
-    Label(ws, text='Max evaluation tentatives').grid(row=2, column=0, padx=5)
+    Label(ws, text='Max evaluation tentatives of the optimizer').grid(row=2, column=0, padx=5)
     num_eval = Entry(ws)
     num_eval.grid(row=2, column=1)
 
@@ -185,7 +185,7 @@ def main():
     test_size_text.grid(row=4, column=1)
 
     # LIST select algorithm
-    measure_list = Label(ws, text='Select measure distance')
+    measure_list = Label(ws, text='Select measure distance for KNN')
     measure_list.grid(row=3, column=0, padx=10)
 
     variable_measure = StringVar(ws)
