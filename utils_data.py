@@ -76,14 +76,12 @@ def save_excel(final_res, metrics_df):
         final_res.to_excel(writer, sheet_name='final_results')
         metrics_df.to_excel(writer, sheet_name='metrics')
 
-
+# if the data_test has different columns from the aps_train, this function will padd the missing columns with 0
+# if the data_test has more columns than the aps_train, this function will drop the extra columns
 def features_check(data_test, aps_train):
-    try:
-        data_test = data_test[aps_train]
-    except KeyError:
-        print('data_test != aps_train')
+    # extract from data_test the columns in aps_train
+    data_test = data_test[aps_train]
     return data_test
-
 
 # used to find the columns of the dataframe that contains the APs
 def find_aps(df):
@@ -93,3 +91,10 @@ def find_aps(df):
             columns.append(col)
     return columns
 
+# rename the features with incremental numbers
+def rename_aps(df_train):
+    aps = find_aps(df_train)
+    aps = sorted(aps)
+    for i, ap in enumerate(aps):
+        df_train = df_train.rename(columns={ap: 'AP' + str(i)})
+    return df_train

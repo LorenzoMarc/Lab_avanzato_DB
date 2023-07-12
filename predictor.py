@@ -1,5 +1,6 @@
 import time
 
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OrdinalEncoder
 
@@ -22,24 +23,26 @@ and columns df['coord_x', 'coord_y'] as input
 
 
 def main_train_multilabel(df_train, algo, measure_distance, tuning, num_eval=20, n=10, test_size=0.2):
-
     # find the columns of the dataframe that contains the APs
     aps = ud.find_aps(df_train)
-    df = df_train[['fingerprint_id', 'coord_x', 'coord_y', 'coord_z', 'building', 'floor', 'tile'] + aps]
+
+    df_train[aps] = df_train[aps].fillna(100)
+    #rename columns aps with incremental number
+    df_train = ud.rename_aps(df_train)
+    aps = ud.find_aps(df_train)
+    df = df_train[['fingerprint_id', 'coord_x', 'coord_y', 'coord_z', 'building', 'floor', 'tile']+ aps]
     print('Preprocessing data...')
     enc = OrdinalEncoder()
-    # fill numeric missing APs with 100
-    df[aps] = df[aps].fillna(100)
     df[['coord_x', 'coord_y', 'coord_z']] = df[['coord_x', 'coord_y', 'coord_z']].fillna(0)
     # remove 'tile_' from tile column if present
     df['tile'] = df['tile'].str.replace('tile_', '')
     # fill categorical missing values with 'missing'
     df[['building', 'floor', 'tile']] = df[['building', 'floor', 'tile']].fillna('missing')
-    df[['building','floor', 'tile']] = enc.fit_transform(df[['building', 'floor', 'tile']])
+    df[['building', 'floor', 'tile']] = enc.fit_transform(df[['building', 'floor', 'tile']])
 
     if test_size > 0.99:
         print('error the test size cannot be more then .99')
-    train, test = train_test_split(df, test_size=test_size, random_state=42)
+    train, test = train_test_split(df, test_size=test_size)
     print('Splitting data...')
     # KNN/WKK have to be trained on regression and classification. Features input are APs.
     # classification: building, floor, tile
@@ -71,8 +74,11 @@ def main_train_multilabel(df_train, algo, measure_distance, tuning, num_eval=20,
 def main_test(df_path, pkl_model, metrics, task):
     df = pd.read_csv(df_path, low_memory=False)
     aps = ud.find_aps(df)
-    df = df[['fingerprint_id', 'coord_x', 'coord_y', 'coord_z', 'building', 'floor', 'tile'] + aps]
     df[aps] = df[aps].fillna(100)
+    #rename columns aps with incremental number
+    df = ud.rename_aps(df)
+    aps = ud.find_aps(df)
+    df = df[['fingerprint_id', 'coord_x', 'coord_y', 'coord_z', 'building', 'floor', 'tile'] + aps]
 
     df[['coord_x', 'coord_y', 'coord_z']] = df[['coord_x', 'coord_y', 'coord_z']].fillna(0)
     # fill categorical missing values with 'missing'
@@ -80,7 +86,7 @@ def main_test(df_path, pkl_model, metrics, task):
     # remove 'tile_' from tile column
     df['tile'] = df['tile'].str.replace('tile_', '')
     enc = OrdinalEncoder()
-    df[['building','floor', 'tile']] = enc.fit_transform(df[['building', 'floor', 'tile']])
+    df[['building', 'floor', 'tile']] = enc.fit_transform(df[['building', 'floor', 'tile']])
     if task.upper() == 'classification'.upper():
         list_target = ['building', 'floor', 'tile']
         non_target = ['coord_x', 'coord_y', 'coord_z']
@@ -93,25 +99,23 @@ def main_test(df_path, pkl_model, metrics, task):
     target = df[list_target]
     model = ud.load(pkl_model)
     features = ud.features_check(df, model.aps)
-    common_aps = features.columns
-
     try:
         pred = model.predict(features)
     except ValueError as e:
         print('Caught {} \nFeatures of the Dataset are different from the Features used in training'.format(e))
-        time.sleep(90)
-        pred = 0
+        # padd the features with 0 values if the features of the dataset are different from the features used in training
+        features = ud.features_check(df, model.aps)
+        pred = model.predict(features)
     pred_df = pd.DataFrame(pred, columns=list_target)
     # evaluate the prediction made by the model with the metrics selected
     final_res, metrics_res = metrics_eval.main(features, pred_df, target, not_target,
                                                metrics,
                                                task)
-    final_res = final_res.drop(common_aps, axis=1)
 
     metrics_df = pd.DataFrame.from_records(metrics_res, columns=['metric', 'value'])
     # final_res[['building', 'floor', 'tile']] = enc.inverse_transform(final_res[['building', 'floor', 'tile']])
     if task.upper() == 'classification'.upper():
-        final_res[['building_target', 'floor_target', 'tile_target']] =\
+        final_res[['building_target', 'floor_target', 'tile_target']] = \
             enc.inverse_transform(final_res[['building_target', 'floor_target', 'tile_target']])
     # save final_res and metrics_df in excel file
     # ud.save_excel(final_res, metrics_df)

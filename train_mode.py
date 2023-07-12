@@ -42,7 +42,7 @@ standard_dataset = ''
 def main():
     ws = Toplevel()
     ws.title('Train Mode')
-    ws.geometry('750x300')
+    ws.geometry('780x300')
 
     # if ypu add a new algotithm you have to add it to this list to make it selectable
     OPTIONS = [
@@ -116,7 +116,7 @@ def main():
             # print res and score of the first model
             result_model = res_class[0]
             score = res_class[1]
-            # print the parameters selected for the training and save in xlsx file
+            # print the parameters selected for the training
             print("Parameters selected: \n")
             print("Algorithm: " + str(algo_selected))
             print("Measure: " + str(measure_selected))
@@ -141,58 +141,59 @@ def main():
 
     # LIST standard datasets
     datasets_iso = Label(ws, text='Standard Dataset')
-    datasets_iso.grid(row=0, column=0, padx=10)
+    datasets_iso.grid(row=0, column=0)
     list_name = StringVar(ws)
 
     ds = OptionMenu(ws, list_name, *list_datasets)
 
-    ds.grid(row=0, columnspan=2, column=1)
+    ds.grid(row=0, column=1)
 
     # BUTTON select dataset
 
-    Label(ws, text='OR').grid(row=0, column=3, padx=15)
+    Label(ws, text='OR').grid(row=0, column=2)
     btn = Button(ws, text='Select your dataset', command=select_data)
-    btn.grid(row=0, column=4, padx=5)
+    btn.grid(row=0, column=3)
 
     # LIST select algorithm
     algolab = Label(ws, text='Select algorithm')
-    algolab.grid(row=1, column=0, padx=10)
+    algolab.grid(row=1, column=0)
 
     variable = StringVar(ws)
 
     algos = OptionMenu(ws, variable, *OPTIONS)
 
-    algos.grid(row=1, columnspan=2, column=1)
+    algos.grid(row=1, column=1)
 
     # num Neighbors to insert
     num_neighbors = Label(ws, text='Number of Max Neighbors')
-    num_neighbors.grid(row=1, column=4, padx=5)
+    num_neighbors.grid(row=1, column=2)
     num_neighbors = Entry(ws)
-    num_neighbors.grid(row=1, column=5)
+    num_neighbors.grid(row=1, column=3)
 
     # checkbox to select if you want to finetune the model or not
     var = IntVar()
-    Checkbutton(ws, text="Fine tune model", variable=var, offvalue=False, onvalue=True).grid(row=2, column=3, sticky=W)
+    Checkbutton(ws, text="Fine tune model", variable=var, offvalue=False, onvalue=True).grid(row=2, column=2)
 
     # var num evaluation
-    Label(ws, text='Max evaluation tentatives of the optimizer').grid(row=2, column=0, padx=5)
+    Label(ws, text='Max evaluation tentatives of the optimizer').grid(row=2, column=0)
     num_eval = Entry(ws)
     num_eval.grid(row=2, column=1)
 
     # var num test_size
-    Label(ws, text='Test Size for training').grid(row=4, column=0, padx=5)
+    Label(ws, text='Test Size for training \n Only decimal format allowed (0.2 default)').grid(row=4, column=0)
     test_size_text = Entry(ws)
     test_size_text.grid(row=4, column=1)
+    #Label(ws, text='Only decimal format allowed (0.3 default)').grid(row=4, column=2)
 
     # LIST select algorithm
     measure_list = Label(ws, text='Select measure distance for KNN')
-    measure_list.grid(row=3, column=0, padx=10)
+    measure_list.grid(row=3, column=0)
 
     variable_measure = StringVar(ws)
 
     metrics = OptionMenu(ws, variable_measure, *measure_distance)
 
-    metrics.grid(row=3, columnspan=2, column=1)
+    metrics.grid(row=3,  column=1)
 
     # BUTTON compute
 
@@ -201,6 +202,6 @@ def main():
         text='Compute Files',
         command=run_main
     )
-    upld.grid(row=5, columnspan=3, pady=10, column=2)
+    upld.grid(row=5, column=2)
 
     ws.mainloop()

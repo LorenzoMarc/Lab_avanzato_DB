@@ -29,7 +29,9 @@ def main():
         metrics = { 'RMSE': rmse_bool.get(), 'Precision': precision_bool.get(), 'Recall': recall_bool.get(),
                     'F1': f1_bool.get(), 'MAE': mae_bool.get(), 'MSE': mse_bool.get(), 'ME': me_bool.get(),
                      'R2': r2_bool.get(), 'EVS': evs_bool.get(), 'MedAE': medae_bool.get(),
-                    'Accuracy': acc_bool.get(), '2D Error': error2d_bool.get(), 'fdp': fdp_bool.get()}
+                    'Accuracy': acc_bool.get(), '2D Error': error2d_bool.get(), 'fdp': fdp_bool.get(),
+                    'SD': sd_bool.get(), 'EVAAL': evaal_bool.get()}
+
         if prediction is None:
             print("Select a valid prediction")
             Label(main_w, text="Select a valid prediction", foreground='red').grid(row=12, columnspan=3, pady=10)
@@ -64,6 +66,9 @@ def main():
     medae_bool = IntVar()
     error2d_bool = IntVar()
     fdp_bool = IntVar()
+    sd_bool = IntVar()
+    evaal_bool = IntVar()
+
 
     # Create checkbox for each metric
     rmse_box = Checkbutton(main_w, text='RMSE', variable=rmse_bool, onvalue=1, offvalue=0, )
@@ -90,12 +95,16 @@ def main():
     error2d_box.grid(row=7, column=3)
     fdp_box = Checkbutton(main_w, text='Floor Detection Rate', variable=fdp_bool, onvalue=1, offvalue=0)
     fdp_box.grid(row=6, column=3)
+    sd_box = Checkbutton(main_w, text='Standard Deviation', variable=sd_bool, onvalue=1, offvalue=0)
+    sd_box.grid(row=8, column=0)
+    evaal_box = Checkbutton(main_w, text='EVAAL', variable=evaal_bool, onvalue=1, offvalue=0)
+    evaal_box.grid(row=8, column=1)
 
     section_clf = Label(main_w, text='Classification metrics')
-    section_clf.grid(row=8, column=1, padx=10, columnspan=2)
+    section_clf.grid(row=9, column=1, padx=10, columnspan=2)
 
     acc_box = Checkbutton(main_w, text='accuracy', variable=acc_bool, onvalue=1, offvalue=0)
-    acc_box.grid(row=9, column=1)
+    acc_box.grid(row=10, column=1)
 
     upld = Button(
         main_w,

@@ -24,6 +24,7 @@ def clf(parameters_list):
     aps = [ap for ap in params['features']]
     train_features = params['train'][aps]
     test_features = params['test'][aps]
+    # merge train features in one column
     labels_task = [lab for lab in params[task]]
     train_labels = params['train'][labels_task]
     test_labels = params['test'][labels_task]
@@ -78,6 +79,7 @@ def train_model(params, task):
     best_model = get_best_model_trials(trials)
     # get the prediction and the score
     labels_task = [lab for lab in params[task]]
+
     aps = [ap for ap in params['features']]
     prediction, score = test(best_model, params['test'][aps], params['test'][labels_task])
     # save model

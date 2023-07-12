@@ -60,6 +60,39 @@ def fdp_metric(row):
         return 0
 
 
+# this function is used to calculate the EVAAL metric proposed in the IPIN2015 competition
+# The RTLS error is defined as the Euclidean distance between the estimated and the true position
+# the formula is the following:
+# euclidean distance (estimated position, true position) + pn_1 * bFail + pn_2+ fFail
+# where  pn_1 is the penalty for wrong building set to 50, pn_2 is the penalty for wrong floor set to 4
+# bFail is 0 if the building is correct, 1 otherwise
+# fFail is the absolute difference between the estimated floor and the true floor
+def evaal_metric(row, b):
+    pred_vector = np.array([row['coord_x'], row['coord_y'], row['coord_z']])
+    try:
+        target_vector = np.array([row['coord_x_target'], row['coord_y_target'], row['coord_z_target']])
+    except:
+        target_vector = np.array([0, 0, 0])
+    euclidean_distance_err = np.sqrt(np.sum((pred_vector - target_vector) ** 2))
+    if row['building'] == b:
+        bFail = 0
+    else:
+        bFail = 1
+    fFail = abs(row['coord_z'] - row['coord_z_target'])
+    return euclidean_distance_err + 50 * bFail + 4 * fFail
+
+
+# This function return the most common building for each strongest AP
+def radio_map_building(data):
+    # select all the columns with name like 'AP'
+    columns = [col for col in data.columns if 'AP' in col]
+    # Select the strongest AP for each row of the dataframe, count the building and return the most frequent
+    data['strongest_AP'] = data[columns].idxmax(axis=1)
+    b = data.groupby('strongest_AP')['building'].agg(pd.Series.mode).reset_index()
+    b = b['building'].mode()[0]
+    return b
+
+
 def main(features, pred, target, not_target, metrics, task):
     tqdm.pandas()
     results_metrics = {'metric': [], 'value': []}
@@ -110,7 +143,10 @@ def main(features, pred, target, not_target, metrics, task):
             FP = data[data['class'] == 0].shape[0]
             precision = TP / (TP + FP)
             recall = TP / data.shape[0]
-            F1 = 2 * (precision * recall) / (precision + recall)
+            try:
+                F1 = 2 * (precision * recall) / (precision + recall)
+            except ZeroDivisionError:
+                F1 = 0
             results_metrics['metric'].append('F1')
             results_metrics['value'].append(F1)
         if metrics['MAE']:
@@ -159,12 +195,22 @@ def main(features, pred, target, not_target, metrics, task):
             fdp = 100 * (correct_floor_sum / len(data))
             results_metrics['metric'].append('fdp')
             results_metrics['value'].append(fdp)
+
         # if SD is in metrics, calculate the standard deviation of the euclidean distance
         if metrics['SD']:
             print('Calculating SD metric...')
             SD = data['E'].std()
             results_metrics['metric'].append('SD')
             results_metrics['value'].append(SD)
+        # If evaal in metrics, calculate the evaal metric
+        if metrics['EVAAL']:
+            print('Calculating EVAAL metric...')
+            b = radio_map_building(data)
+            data['EVAAL'] = data.progress_apply(lambda row: evaal_metric(row, b), axis=1)
+            EVAAL = data['EVAAL'].mean()
+            results_metrics['metric'].append('EVAAL')
+            results_metrics['value'].append(EVAAL)
+
 
     # if task is classification, calculate the metric accuracy and success rate
     elif task.strip() == 'CLASSIFICATION':
