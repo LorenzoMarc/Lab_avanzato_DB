@@ -84,10 +84,11 @@ def evaal_metric(row, b):
 
 # This function return the most common building for each strongest AP
 def radio_map_building(data):
+    data = data.drop(columns='strongest_AP', errors='ignore')
     # select all the columns with name like 'AP'
     columns = [col for col in data.columns if 'AP' in col]
     # Select the strongest AP for each row of the dataframe, count the building and return the most frequent
-    data['strongest_AP'] = data[columns].idxmax(axis=1)
+    data['strongest_AP'] = data[columns].astype(float).idxmax(axis=1)
     b = data.groupby('strongest_AP')['building'].agg(pd.Series.mode).reset_index()
     b = b['building'].mode()[0]
     return b
@@ -104,13 +105,9 @@ def main(features, pred, target, not_target, metrics, task):
     original = pd.concat([target, not_target, features], axis=1)
     data = pd.concat([pred, original], axis=1)
 
-    ''' based on metric selected on checkbox, apply the euclidean distance function to each row of the dataframe
-    and save the result in a new column of the dataframe
-     if no metric is selected, exit the function
-    '''
     if len(metrics) == 0:
         return data
-    # if task is regression, calculate the metric selected in regression tab
+
     if task == 'REGRESSION':
         # calculate the euclidean distance and the RMSE
         data['E'] = 0
@@ -177,7 +174,6 @@ def main(features, pred, target, not_target, metrics, task):
             results_metrics['value'].append(ME)
         # if metrics is 2d error calculate:
         # coord_z is the coordinate of the floor, if predicted z is equal to target z, the prediction is correct
-        # then calculate the distance between the predicted and the target coord_x and coord_y,
         # if the z is not correct, the distance is not calculated
         if metrics['2D Error']:
             print('Calculating 2D Error metric...')
@@ -186,7 +182,7 @@ def main(features, pred, target, not_target, metrics, task):
             mean_2d_error = data[data['2D Error'] != 0]['2D Error'].mean()
             results_metrics['metric'].append('2D Error')
             results_metrics['value'].append(mean_2d_error)
-        # if 'fdp' is in metrics, calculate the percentage of correct predictions of the floor
+        #  percentage of correct predictions of the floor
         if metrics['fdp']:
             print('Calculating fdp metric...')
             # calculate data['fdp'] and save the result in results_metrics
@@ -195,14 +191,12 @@ def main(features, pred, target, not_target, metrics, task):
             fdp = 100 * (correct_floor_sum / len(data))
             results_metrics['metric'].append('fdp')
             results_metrics['value'].append(fdp)
-
-        # if SD is in metrics, calculate the standard deviation of the euclidean distance
+        # standard deviation of the euclidean distance
         if metrics['SD']:
             print('Calculating SD metric...')
             SD = data['E'].std()
             results_metrics['metric'].append('SD')
             results_metrics['value'].append(SD)
-        # If evaal in metrics, calculate the evaal metric
         if metrics['EVAAL']:
             print('Calculating EVAAL metric...')
             b = radio_map_building(data)
@@ -211,8 +205,6 @@ def main(features, pred, target, not_target, metrics, task):
             results_metrics['metric'].append('EVAAL')
             results_metrics['value'].append(EVAAL)
 
-
-    # if task is classification, calculate the metric accuracy and success rate
     elif task.strip() == 'CLASSIFICATION':
         if metrics['Accuracy']:
             print('Calculating accuracy metric...')
@@ -230,7 +222,6 @@ def main(features, pred, target, not_target, metrics, task):
             wrong_building_sum = len(data) - correct_building_sum
             accuracy_tile = correct_floor_sum / len(data)
 
-            # add metrics to results_metrics
             results_metrics['metric'].extend(['accuracy_building', 'accuracy_floor', 'accuracy_tile',
                                               'success_rate', 'wrong_building'])
             results_metrics['value'].extend([correct_building_sum / len(data), correct_floor_sum / len(data),
@@ -239,7 +230,7 @@ def main(features, pred, target, not_target, metrics, task):
     return data, results_metrics
 
 
-# this function is used to calculate the metrics of the user prediction
+# this function is used to calculate the metrics of the user prediction, kind a copy of the above func
 def user_prediction(pred_df, metrics):
     results_metrics = {'metric': [], 'value': []}
     tqdm.pandas()
@@ -258,7 +249,7 @@ def user_prediction(pred_df, metrics):
             RMSE = np.sqrt(np.mean(data['E'] ** 2))
             results_metrics['metric'].append('RMSE')
             results_metrics['value'].append(RMSE)
-        # calculate the precision, recall and F1 score
+        # precision, recall and F1 score
         if metrics['Precision']:
             print('Calculating Precision metric...')
             TP = data[data['class'] == 1].shape[0]
@@ -283,7 +274,7 @@ def user_prediction(pred_df, metrics):
             results_metrics['value'].append(F1)
         if metrics['MAE']:
             print('Calculations MAE metric...')
-            # calculate the MAE of data['E'] and save the result in results_metrics
+            #  MAE of data['E'] and save the result in results_metrics
             MAE = data['E'].mean()
             results_metrics['metric'].append('MAE')
             results_metrics['value'].append(MAE)
@@ -309,28 +300,38 @@ def user_prediction(pred_df, metrics):
             results_metrics['value'].append(ME)
         # if metrics is 2d error calculate:
         # coord_z is the coordinate of the floor, if predicted z is equal to target z, the prediction is correct
-        # then calculate the distance between the predicted and the target coord_x and coord_y,
         # if the z is not correct, the distance is not calculated
         if metrics['2D Error']:
             print('Calculating 2D Error metric...')
             data['2D Error'] = data.progress_apply(lambda row: two_d_error(row), axis=1)
-            # calculate the mean of the 2D Error if and only if the z is correct
+            #  mean of the 2D Error if and only if the z is correct
             mean_2d_error = data[data['2D Error'] != 0]['2D Error'].mean()
             results_metrics['metric'].append('2D Error')
             results_metrics['value'].append(mean_2d_error)
-        # if 'fdp' is in metrics, calculate the percentage of correct predictions of the floor
         if metrics['fdp']:
             print('Calculating fdp metric...')
-            # calculate data['fdp'] and save the result in results_metrics
             data['fdp'] = data.progress_apply(lambda row: fdp_metric(row), axis=1)
             correct_floor_sum = data['fdp'].sum()
             fdp = 100 * (correct_floor_sum / len(data))
             results_metrics['metric'].append('fdp')
             results_metrics['value'].append(fdp)
+        if metrics['SD']:
+            print('Calculating SD metric...')
+            SD = data['E'].std()
+            results_metrics['metric'].append('SD')
+            results_metrics['value'].append(SD)
+        if metrics['EVAAL']:
+            print('Calculating EVAAL metric...')
+            b = radio_map_building(data)
+            data['EVAAL'] = data.progress_apply(lambda row: evaal_metric(row, b), axis=1)
+            EVAAL = data['EVAAL'].mean()
+            results_metrics['metric'].append('EVAAL')
+            results_metrics['value'].append(EVAAL)
 
     if metrics['Accuracy']:
         print('Calculating accuracy metric...')
-        # ordinal encoding of classification labels (building, floor, tile) and target labels (building_target, floor_target, tile_target)
+        # ordinal encoding of classification labels (building, floor, tile) and target labels (building_target,
+        # floor_target, tile_target)
         pred_df['building'] = pred_df['building'].astype('category')
         pred_df['floor'] = pred_df['floor'].astype('category')
         pred_df['tile'] = pred_df['tile'].astype('category')

@@ -1,14 +1,8 @@
 import pickle as pkl
 from datetime import datetime
 import numpy as np
-from sklearn.model_selection import train_test_split  # for splitting the data into train and test samples
-from sklearn.preprocessing import MinMaxScaler  # for feature scaling
-from sklearn.preprocessing import OrdinalEncoder  # to encode categorical variables
 from matplotlib.pyplot import savefig, subplots
 import pandas as pd
-
-
-# from pandas_profiling import ProfileReport
 
 
 def plot_results(trials, task, algo, measure):
@@ -76,12 +70,14 @@ def save_excel(final_res, metrics_df):
         final_res.to_excel(writer, sheet_name='final_results')
         metrics_df.to_excel(writer, sheet_name='metrics')
 
+
 # if the data_test has different columns from the aps_train, this function will padd the missing columns with 0
 # if the data_test has more columns than the aps_train, this function will drop the extra columns
 def features_check(data_test, aps_train):
     # extract from data_test the columns in aps_train
     data_test = data_test[aps_train]
     return data_test
+
 
 # used to find the columns of the dataframe that contains the APs
 def find_aps(df):
@@ -90,6 +86,7 @@ def find_aps(df):
         if 'AP' in col:
             columns.append(col)
     return columns
+
 
 # rename the features with incremental numbers
 def rename_aps(df_train):

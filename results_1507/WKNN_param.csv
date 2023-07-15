@@ -1,0 +1,2 @@
+Algorithm,Measure,Fine tune,Number of evaluations,Number of neighbors,Test size,Score
+WKNN,cosine,True,22,50,0.25,0.9651162790697675

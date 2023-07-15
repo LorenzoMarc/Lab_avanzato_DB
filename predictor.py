@@ -1,9 +1,5 @@
-import time
-
-import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OrdinalEncoder
-
 import model_class as mc
 import utils_data as ud
 import pandas as pd
@@ -15,10 +11,10 @@ warnings.filterwarnings("ignore")
 
 '''This module is used to predict position of the user based on coordinates and RSS values of the APs
 The first function is a preprocessing function that select dependent and independent variables:
-    - dependent variable: coord_x, coord_y
-    - independent variable: building, floor, tile
+    - dependent variable: APs
+    - independent variable: building, floor, tile, coordinates
 The second function is a main function that calls the model_class module to select the algorithm to use
-and columns df['coord_x', 'coord_y'] as input
+
 '''
 
 
@@ -27,10 +23,10 @@ def main_train_multilabel(df_train, algo, measure_distance, tuning, num_eval=20,
     aps = ud.find_aps(df_train)
 
     df_train[aps] = df_train[aps].fillna(100)
-    #rename columns aps with incremental number
+    # rename columns aps with incremental number
     df_train = ud.rename_aps(df_train)
     aps = ud.find_aps(df_train)
-    df = df_train[['fingerprint_id', 'coord_x', 'coord_y', 'coord_z', 'building', 'floor', 'tile']+ aps]
+    df = df_train[['fingerprint_id', 'coord_x', 'coord_y', 'coord_z', 'building', 'floor', 'tile'] + aps]
     print('Preprocessing data...')
     enc = OrdinalEncoder()
     df[['coord_x', 'coord_y', 'coord_z']] = df[['coord_x', 'coord_y', 'coord_z']].fillna(0)
@@ -63,6 +59,7 @@ def main_train_multilabel(df_train, algo, measure_distance, tuning, num_eval=20,
     }
     print('Training new model...')
 
+    # training of the two models for class and regression
     pred_clf, score, name_model = mc.train_model(params, 'classification')
     pred_reg, score_reg, name_model_reg = mc.train_model(params, 'regression')
     decoded_clf = enc.inverse_transform(pred_clf)
@@ -75,7 +72,7 @@ def main_test(df_path, pkl_model, metrics, task):
     df = pd.read_csv(df_path, low_memory=False)
     aps = ud.find_aps(df)
     df[aps] = df[aps].fillna(100)
-    #rename columns aps with incremental number
+    # rename columns aps with incremental number
     df = ud.rename_aps(df)
     aps = ud.find_aps(df)
     df = df[['fingerprint_id', 'coord_x', 'coord_y', 'coord_z', 'building', 'floor', 'tile'] + aps]
@@ -83,7 +80,6 @@ def main_test(df_path, pkl_model, metrics, task):
     df[['coord_x', 'coord_y', 'coord_z']] = df[['coord_x', 'coord_y', 'coord_z']].fillna(0)
     # fill categorical missing values with 'missing'
     df[['building', 'floor', 'tile']] = df[['building', 'floor', 'tile']].fillna('missing')
-    # remove 'tile_' from tile column
     df['tile'] = df['tile'].str.replace('tile_', '')
     enc = OrdinalEncoder()
     df[['building', 'floor', 'tile']] = enc.fit_transform(df[['building', 'floor', 'tile']])
@@ -103,10 +99,12 @@ def main_test(df_path, pkl_model, metrics, task):
         pred = model.predict(features)
     except ValueError as e:
         print('Caught {} \nFeatures of the Dataset are different from the Features used in training'.format(e))
-        # padd the features with 0 values if the features of the dataset are different from the features used in training
+        # padd the features with 0 values if the features of the dataset are different from the features used in
+        # training
         features = ud.features_check(df, model.aps)
         pred = model.predict(features)
     pred_df = pd.DataFrame(pred, columns=list_target)
+
     # evaluate the prediction made by the model with the metrics selected
     final_res, metrics_res = metrics_eval.main(features, pred_df, target, not_target,
                                                metrics,
@@ -128,18 +126,19 @@ def main_test(df_path, pkl_model, metrics, task):
 
 # main_test_pred evaluate the prediction and the dataset uploaded by the user
 def main_test_pred(df_path, metrics):
-    prediction = pd.read_csv(df_path, low_memory=False, usecols=lambda x: x in ['coord_x', 'coord_y', 'coord_z',
-                                                                                'building', 'floor', 'tile',
-                                                                                'coord_x_target', 'coord_y_target',
-                                                                                'coord_z_target',
-                                                                                'building_target', 'floor_target',
-                                                                                'tile_target'])
+    # prediction = pd.read_csv(df_path, low_memory=False, usecols=lambda x: x in ['coord_x', 'coord_y', 'coord_z',
+    #                                                                             'building', 'floor', 'tile',
+    #                                                                             'coord_x_target', 'coord_y_target',
+    #                                                                             'coord_z_target',
+    #                                                                             'building_target', 'floor_target',
+    #                                                                             'tile_target'])
+    prediction = pd.read_csv(df_path, low_memory=False)
 
     # select the column that are not in target
 
     final_res, metrics = metrics_eval.user_prediction(prediction, metrics)
     metrics_df = pd.DataFrame.from_records(metrics, columns=['metric', 'value'])
-    # save final_res and metrics_df in excel file
+    # save final_res and metrics_df in excel file, uncomment this line if you like
     # ud.save_excel(final_res, metrics_df)
     ud.save_csv(final_res, metrics_df)
     return True

@@ -1,6 +1,6 @@
 """
 this is the main UI for the project. It makes available
-the 3 modes of the project: train, evaluate and evaluate prediction
+ 3 activities of the project: train, evaluate and evaluate prediction
 """
 
 from tkinter import Button, Tk, CENTER
@@ -11,10 +11,6 @@ from eval_pred_mode import main as eval_pred
 main_w = Tk()
 main_w.title('Lab2 Positional ML')
 main_w.geometry('350x250')
-
-
-# TODO:
-## aggiungere descrizione parametri di default
 
 
 def run_train():

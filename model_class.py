@@ -2,7 +2,6 @@ from sklearn.multioutput import MultiOutputClassifier, MultiOutputRegressor
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from numpy import argmin
 from hyperopt import fmin, tpe, Trials, STATUS_OK
-
 import utils_data as ud
 
 
@@ -32,7 +31,8 @@ def clf(parameters_list):
         n = params['n_neighbors']
     else:
         n = params['n']
-    # extend the dictionary with the algorithm and the task to perform
+    # if you add algorithm, extend the dictionary with the algorithm and the task to perform, using the label you add
+    # in the GUI, follow the data structure and import your dependencies (not validated, no guarantees))
     dict_algo = {
         'KNN': {
             'classification': MultiOutputClassifier(
@@ -74,7 +74,8 @@ def train_model(params, task):
     algorithm = params['algo_selection']
     measure_distance = params['measure_distance']
     num_eval = params['num_eval']
-    # get the model
+    # get the model from the actual trainer 'clf', tpe.suggest find the best hyperarameters with
+    # Tree-based Parzen Esimtors (TPE) which optimize a user-defined objective function
     model = fmin(clf, [params, task], algo=tpe.suggest, max_evals=int(num_eval), trials=trials)
     best_model = get_best_model_trials(trials)
     # get the prediction and the score

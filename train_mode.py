@@ -7,15 +7,15 @@ from tkinter.filedialog import askopenfile
 from tkinter.ttk import OptionMenu, Entry
 
 
-# this function find folder from current path named 'converted dataset' and
-# read names of subfolders and save them in a list
+# this function find folder from current path named 'datasets' and
+# read names of subfolders and save them in a list to present in GUI
 def get_folders():
     path = os.path.join(os.getcwd(), 'datasets')
     folders = os.listdir(path)
     return folders
 
 
-# merge file fingerprints.csv and wifi_obs.csv in a single dataframe
+# merge file from Indoor Positioning Standard to a single dataframe. File merged: fingerprints.csv and wifi_obs.csv
 def merge_fingerprints_wifi_obs(path_folder):
     df = pd.DataFrame()
     list_fingerprints = sorted(glob.glob(path_folder + r'\**\fingerprints.csv', recursive=True))
@@ -44,14 +44,14 @@ def main():
     ws.title('Train Mode')
     ws.geometry('780x300')
 
-    # if ypu add a new algotithm you have to add it to this list to make it selectable
+    # if you add a new algorithm you have to add it to this list to make it selectable
     OPTIONS = [
         "SELECT ALGORITHM",
         "KNN",
         "WKNN"
     ]
 
-    # If you want to add a new algorithm, add it to this list
+    # If you want to add a new measure of distance, add it to this list
     measure_distance = [
         "SELECT METRICS",
         "cityblock",
@@ -110,7 +110,8 @@ def main():
             print("Select a valid measure")
             Label(ws, text="Select a valid measure", foreground='red').grid(row=10, columnspan=3, pady=10)
         else:
-            # everything is ok, run main training function
+
+            # everything is ok, run main training function --> follow this
             res_class, res_reg = predictor.main_train_multilabel(training_set, algo_selected, measure_selected,
                                                                  fine_tune, num_eval_selected, n_neigh, test_size)
             # print res and score of the first model
@@ -183,7 +184,6 @@ def main():
     Label(ws, text='Test Size for training \n Only decimal format allowed (0.2 default)').grid(row=4, column=0)
     test_size_text = Entry(ws)
     test_size_text.grid(row=4, column=1)
-    #Label(ws, text='Only decimal format allowed (0.3 default)').grid(row=4, column=2)
 
     # LIST select algorithm
     measure_list = Label(ws, text='Select measure distance for KNN')

@@ -52,7 +52,6 @@ def main():
     section_reg.grid(row=2, column=1, padx=10, columnspan=2)
 
     # Metrics selection
-    # add IntVar for the metrics precision, recall, f1, accuracy, rmse, mae, mape, r2
     rmse_bool = IntVar()
     acc_bool = IntVar()
     precision_bool = IntVar()
@@ -69,8 +68,6 @@ def main():
     sd_bool = IntVar()
     evaal_bool = IntVar()
 
-
-    # Create checkbox for each metric
     rmse_box = Checkbutton(main_w, text='RMSE', variable=rmse_bool, onvalue=1, offvalue=0, )
     rmse_box.grid(row=5, column=0)
     mse_box = Checkbutton(main_w, text='MSE', variable=mse_bool, onvalue=1, offvalue=0)
